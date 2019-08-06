@@ -1,0 +1,20 @@
+white
+#fff8c0
+
+red
+#d44e52
+
+cyan
+#55a894
+
+blue
+#38607c
+
+lime green
+#5c7a56
+
+green
+#3e5442
+
+dark blue
+#101024
