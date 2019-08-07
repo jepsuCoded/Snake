@@ -8,25 +8,35 @@ class SceneMain extends Phaser.Scene {
     _scene = this;
     this.timeSleep = {
       value: 0,
-      max: 400
+      max: 80
     };
   }
   
   create() {
     this.createSnake();
+    this.text = this.add.text(game.cW, game.h*0.75, 'Hello').setOrigin(0.5, 0.5)
+  
+    this.ui = new GenUI({scene: this});
+    this.nextGen = this.ui.add.button('Next Generation', 0xffff00)(this.ui.grid.centerX, this.ui.grid.rows*0.95);
+  
+    this.nextGen.on('pointerup', this.nextGeneration.bind(this));
   }
   
   update(time) {
     if (time > this.timeSleep.value) {
-      this.timeSleep.value = time+this.snake.speed;
-      this.snake.goTo();
+      let testSubject = this.ai.snakes[0];
+      this.timeSleep.value = time+this.timeSleep.max;
+      //this.snake.goTo();
+      //if (testSubject.obj.gameOver)
+      
+      this.ai.train();
     }
   }
   
-  createSnake() {
+  createSnake(brain) {
     this.stage = new Stage(this, {
-      col: 30,
-      row: 30
+      col: 50,
+      row: 50
     }, {
       border: 0x38607c,
       bg: 0xfff8c0
@@ -59,7 +69,7 @@ class SceneMain extends Phaser.Scene {
         return;
       }
     });
-    
+    /*
     this.snake = new Snake({
       color: {
         head: 0x55a894,
@@ -73,34 +83,53 @@ class SceneMain extends Phaser.Scene {
       speed: 80,
       length: 3
     });
+    */
     
-    this.apple = new Apple(this.stage, {
-      size: 1
+    //this.snake.apple = this.apple;
+    //this.apple.placeApple(this.snake);
+    
+    this.ai = new SnakeAI(100, this.stage, brain || {
+      i: 9, h: 10, o: 3
     });
-    this.snake.apple = this.apple;
-    this.apple.placeApple(this.snake);
   }
   
-  restartSnake() {
+  restartSnake(brain) {
     for (let obj in this.stage.ui) {
       this.stage.ui[obj].destroy();
     }
-    for (let body in this.snake.body) {
-      this.snake.body[body].destroy();
+    for (let s in this.ai.snakes) {
+      for (let body in this.ai.snakes[s].obj.body) {
+        this.ai.snakes[s].obj.body[body].destroy();
+      }
+      this.ai.snakes[s].obj.apple.body.destroy();
     }
     for (let bound in this.stage.border) {
       this.stage.border[bound].destroy();
     }
     
     this.stage.bg.destroy();
-    this.apple.body.destroy();
     this.swipe.destroy();
     
     this.stage = undefined;
-    this.snake = undefined;
-    this.apple = undefined;
+    this.ai.snakes = undefined;
     this.swipe = undefined;
 
-    this.createSnake();
+    this.createSnake(brain);
+  }
+  
+  nextGeneration() {
+    let best = 0, bestIndex = 0;
+    for (let s in this.ai.snakes) {
+      let snake = this.ai.snakes[s].obj;
+      let score = snake.fitness;
+      if (best < score) {
+        best = score;
+        bestIndex = s;
+      }
+    }
+    
+    let picked = this.ai.snakes[bestIndex].brain;
+    this.restartSnake(picked);
+    //this.ai = new SnakeAI(10, this.apple, this.stage, picked);
   }
 }

@@ -5,6 +5,7 @@ class Snake {
     this.data = [];
     this.body = [];
     
+    this.inputs = [];
     this.stage = stage;
     
     // speed of this snake, default to 200ms
@@ -20,13 +21,13 @@ class Snake {
     };
     
     // Initial direction of snake
-    // this.direction = direction;
+    this.direction = 0//direction;
     
     // randomly place a snake if 'pos' is undefined
     if (!pos) {
       pos = {
-        x: Math.floor(Math.random()*(this.stage.col))+1,
-        y: Math.floor(Math.random()*(this.stage.row))+1
+        x: Math.floor(Math.random()*(this.stage.col)),
+        y: Math.floor(Math.random()*(this.stage.row))
       };
     }
     
@@ -48,6 +49,9 @@ class Snake {
     
     // snake's score
     this.gameScore = 0;
+    
+    this.maxSteps = 500;
+    this.currentSteps = this.maxSteps;
   }
   
   // direction to move (0, 1, 2 ,3)
@@ -68,7 +72,7 @@ class Snake {
   // snake will move to current direction its moving
   goTo(direction = this.direction) {
     
-    // if snake dies or its not moving yet then do nothing
+    // if snake dies or its not moving yet, then do nothing
     if (this.gameOver || typeof this.direction == 'undefined') return;
     
     if (!this.inputQueue.onQueue && this.inputQueue.next >= 0) {
@@ -107,6 +111,8 @@ class Snake {
       default: console.log('invalid input');
     }
     
+    this.currentStep--;
+    
     // update each of snake's body position
     // relative to the snake's head movement
     for (let i = 0; i < head; i++) {
@@ -123,10 +129,16 @@ class Snake {
       // if yes then grow a tail!
       let tail = this.data[0];
       this.grow(tail);
+      
+      this.currentStep = this.maxStep;
     }
     
     if (!this.checkCollision(this.data[this.data.length-1]))
       this.gameEnded();
+      
+    if (this.currentStep <= 0) this.gameEnded();
+    
+    this.inputs.push(direction);
     
     // update snake's position in the canvas
     this.draw();
@@ -154,11 +166,11 @@ class Snake {
   // if 'point' is inside 'this.stage'
   // then its a valid position
   isValidPosition(point) {
-    let col = this.stage.grid.config.cols-1;
-    let row = this.stage.grid.config.rows-1;
+    let col = this.stage.col;
+    let row = this.stage.row;
     
     // if out of bounds then not a valid 'point'
-    if (point.x < 1 || point.x >= col || point.y < 1 || point.y >= row)
+    if (point.x < 0 || point.x >= col || point.y < 0 || point.y >= row)
       return false;
     return true;
   }
@@ -199,6 +211,8 @@ class Snake {
   }
   
   gameEnded() {
+    this.fitness = this.gameScore*5;
+    this.fitness += (this.currentSpeed/this.maxSpeed)*(this.maxSpeed/0.01);
     this.stage.ui.gameOver.setVisible(true);
     this.gameOver = true;
   }
@@ -224,7 +238,7 @@ class Snake {
         this.body[i].fillColor = this.color.head;
         
       let {x, y} = this.data[i];
-      this.stage.grid.placeAt(x, y, this.body[i]);
+      this.stage.grid.placeAt(x+1, y+1, this.body[i]);
     }
     this.inputQueue.onQueue = false;
   }
